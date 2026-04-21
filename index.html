@@ -1,75 +1,120 @@
-ting "Manicure" (30min)
-17:47:57
-✗ "Manicure" failed: Failed to fetch
-17:47:58
-→ Creating "Manicure & Pedicure" (60min)
-17:47:58
-✗ "Manicure & Pedicure" failed: Failed to fetch
-17:47:58
-→ Creating "Nail Fill-In" (45min)
-17:47:58
-✗ "Nail Fill-In" failed: Failed to fetch
-17:47:59
-→ Creating "Nail Polish Change" (20min)
-17:47:59
-✗ "Nail Polish Change" failed: Failed to fetch
-17:47:59
-→ Creating "Nail Polish Removal" (15min)
-17:47:59
-✗ "Nail Polish Removal" failed: Failed to fetch
-17:47:59
-→ Creating "Nail Repair" (20min)
-17:48:00
-✗ "Nail Repair" failed: Failed to fetch
-17:48:00
-→ Creating "Pedicure" (45min)
-17:48:00
-✗ "Pedicure" failed: Failed to fetch
-17:48:00
-→ Creating "Haircut" (30min)
-17:48:00
-✗ "Haircut" failed: Failed to fetch
-17:48:01
-→ Creating "Hair Styling" (45min)
-17:48:01
-✗ "Hair Styling" failed: Failed to fetch
-17:48:01
-→ Creating "Color Only" (60min)
-17:48:01
-✗ "Color Only" failed: Failed to fetch
-17:48:02
-→ Creating "Cut & Color" (90min)
-17:48:02
-✗ "Cut & Color" failed: Failed to fetch
-17:48:02
-→ Creating "Chemical Treatment" (90min)
-17:48:02
-✗ "Chemical Treatment" failed: Failed to fetch
-17:48:02
-→ Creating "Applying Hair Extensions" (90min)
-17:48:02
-✗ "Applying Hair Extensions" failed: Failed to fetch
-17:48:03
-→ Creating "Reapplying Hair Extensions" (60min)
-17:48:03
-✗ "Reapplying Hair Extensions" failed: Failed to fetch
-17:48:03
-→ Creating "Hair Extension Coloring" (60min)
-17:48:03
-✗ "Hair Extension Coloring" failed: Failed to fetch
-17:48:04
-→ Creating "Hair Extension Removal" (45min)
-17:48:04
-✗ "Hair Extension Removal" failed: Failed to fetch
-17:48:04
-→ Creating "Bridal Hair Services" (90min)
-17:48:04
-✗ "Bridal Hair Services" failed: Failed to fetch
-17:48:05
-→ Creating "Waxing" (30min)
-17:48:05
-✗ "Waxing" failed: Failed to fetch
-17:48:05
-─────────────────────────────────
-17:48:05
-Done. 0 created · 18 failed.
+// ─────────────────────────────────────────────
+// Cal.com Bulk Event Creator — Christine's Salon
+// Usage: node create-cal-events.mjs YOUR_API_KEY
+// Get API key: app.cal.com/settings/developer/api-keys
+// ─────────────────────────────────────────────
+
+const API_KEY  = process.argv[2];
+const USERNAME = "christine-ssalon";
+const ADDRESS  = "12713 Bissonnet St, Houston, TX 77099";
+const PHONE    = "(281) 879-8854";
+
+if (!API_KEY) {
+  console.error("\n❌  No API key provided.");
+  console.error("    Usage: node create-cal-events.mjs YOUR_API_KEY\n");
+  process.exit(1);
+}
+
+const EVENTS = [
+  // ── Nails
+  { title: "Manicure",                   slug: "manicure",                duration: 30 },
+  { title: "Manicure & Pedicure",        slug: "manicure-pedicure",       duration: 60 },
+  { title: "Nail Fill-In",               slug: "nail-fill-in",            duration: 45 },
+  { title: "Nail Polish Change",         slug: "nail-polish-change",      duration: 20 },
+  { title: "Nail Polish Removal",        slug: "nail-polish-removal",     duration: 15 },
+  { title: "Nail Repair",                slug: "nail-repair",             duration: 20 },
+  { title: "Pedicure",                   slug: "pedicure",                duration: 45 },
+  // ── Hair
+  { title: "Haircut",                    slug: "haircut",                 duration: 30 },
+  { title: "Hair Styling",               slug: "hair-styling",            duration: 45 },
+  { title: "Color Only",                 slug: "color-only",              duration: 60 },
+  { title: "Cut & Color",                slug: "cut-and-color",           duration: 90 },
+  { title: "Chemical Treatment",         slug: "chemical-treatment",      duration: 90 },
+  { title: "Applying Hair Extensions",   slug: "hair-extensions",         duration: 90 },
+  { title: "Reapplying Hair Extensions", slug: "hair-extensions-reapply", duration: 60 },
+  { title: "Hair Extension Coloring",    slug: "extension-coloring",      duration: 60 },
+  { title: "Hair Extension Removal",     slug: "extension-removal",       duration: 45 },
+  { title: "Bridal Hair Services",       slug: "bridal-hair",             duration: 90 },
+  // ── Wax
+  { title: "Waxing",                     slug: "waxing",                  duration: 30 },
+];
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function createEvent(ev) {
+  const body = {
+    title: ev.title,
+    slug: ev.slug,
+    length: ev.duration,
+    description: `Book your appointment at Christine's Salon · ${ADDRESS} · ${PHONE}`,
+    locations: [{ type: "inPerson", address: ADDRESS }],
+    hidden: false,
+    requiresConfirmation: false,
+    disableGuests: true,
+  };
+
+  const res = await fetch("https://api.cal.com/v1/event-types", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${API_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || data.error || `HTTP ${res.status} — ${JSON.stringify(data)}`);
+  }
+
+  return data;
+}
+
+async function main() {
+  console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("  Cal.com Bulk Event Creator · Christine's Salon");
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log(`  Username : @${USERNAME}`);
+  console.log(`  Address  : ${ADDRESS}`);
+  console.log(`  Events   : ${EVENTS.length} to create`);
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+  let success = 0;
+  let failed  = 0;
+  const errors = [];
+
+  for (const ev of EVENTS) {
+    process.stdout.write(`  → ${ev.title.padEnd(32)} (${ev.duration}min) ... `);
+    try {
+      await createEvent(ev);
+      console.log("✓ created");
+      success++;
+    } catch (err) {
+      console.log(`✗ FAILED`);
+      errors.push({ title: ev.title, error: err.message });
+      failed++;
+    }
+    await sleep(400);
+  }
+
+  console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log(`  ✓ Created : ${success}`);
+  console.log(`  ✗ Failed  : ${failed}`);
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+  if (errors.length > 0) {
+    console.log("\n  Failed events:");
+    errors.forEach(e => console.log(`    - ${e.title}: ${e.error}`));
+  }
+
+  if (success > 0) {
+    console.log(`\n  ✅ Done! Go to app.cal.com/event-types`);
+    console.log(`     and toggle each new event ON to make it live.\n`);
+  }
+}
+
+main().catch(err => {
+  console.error("\n❌  Unexpected error:", err.message);
+  process.exit(1);
+});
