@@ -1,518 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cal.com Event Bulk Creator · BOOKISTUDIO</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #0a0a0f;
-      --surface: #111118;
-      --surface-2: #18181f;
-      --border: rgba(139,92,246,0.2);
-      --border-soft: rgba(139,92,246,0.08);
-      --purple: #8B5CF6;
-      --purple-light: #A78BFA;
-      --purple-dim: #4C1D95;
-      --green: #10B981;
-      --red: #EF4444;
-      --yellow: #F59E0B;
-      --text: #F0EEFF;
-      --text-muted: #6B6B8A;
-      --mono: 'JetBrains Mono', monospace;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg); color: var(--text);
-      font-family: 'Inter', sans-serif; font-size: 14px;
-      min-height: 100vh; padding: 2rem;
-    }
-
-    .header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 2rem; padding-bottom: 1.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .header-left h1 {
-      font-size: 1.1rem; font-weight: 500; letter-spacing: 0.02em;
-    }
-    .header-left p { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem; }
-
-    .badge {
-      font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em;
-      background: rgba(139,92,246,0.12); color: var(--purple-light);
-      border: 1px solid var(--border); padding: 0.3rem 0.7rem;
-    }
-
-    .layout { display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; }
-
-    /* ── Panel ── */
-    .panel {
-      background: var(--surface); border: 1px solid var(--border);
-      padding: 1.5rem;
-    }
-
-    .panel-title {
-      font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.15em;
-      text-transform: uppercase; color: var(--purple); margin-bottom: 1.2rem;
-    }
-
-    label {
-      display: block; font-size: 0.72rem; color: var(--text-muted);
-      letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.4rem;
-    }
-
-    input[type="text"], input[type="password"] {
-      width: 100%; background: var(--surface-2); border: 1px solid var(--border-soft);
-      color: var(--text); font-family: var(--mono); font-size: 0.78rem;
-      padding: 0.65rem 0.8rem; outline: none; margin-bottom: 1rem;
-      transition: border-color 0.2s;
-    }
-    input:focus { border-color: var(--purple); }
-
-    .api-key-wrap { position: relative; }
-    .api-key-wrap input { padding-right: 3rem; }
-    .toggle-eye {
-      position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%);
-      background: none; border: none; color: var(--text-muted); cursor: pointer;
-      font-size: 0.85rem; padding: 0; line-height: 1;
-    }
-
-    .hint {
-      font-size: 0.7rem; color: var(--text-muted); line-height: 1.6;
-      background: var(--surface-2); border-left: 2px solid var(--purple-dim);
-      padding: 0.7rem 0.9rem; margin-bottom: 1.2rem;
-    }
-    .hint a { color: var(--purple-light); text-decoration: none; }
-    .hint a:hover { text-decoration: underline; }
-
-    .divider { border: none; border-top: 1px solid var(--border-soft); margin: 1.2rem 0; }
-
-    /* ── Events list ── */
-    .events-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.2rem; }
-
-    .event-row {
-      display: flex; align-items: center; gap: 0.6rem;
-      background: var(--surface-2); border: 1px solid var(--border-soft);
-      padding: 0.6rem 0.8rem; cursor: pointer; transition: border-color 0.2s;
-      user-select: none;
-    }
-    .event-row:hover { border-color: var(--border); }
-    .event-row.selected { border-color: var(--purple); background: rgba(139,92,246,0.06); }
-
-    .event-check {
-      width: 16px; height: 16px; border: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.6rem; color: var(--purple); flex-shrink: 0;
-      transition: background 0.15s;
-    }
-    .event-row.selected .event-check { background: var(--purple); color: white; border-color: var(--purple); }
-
-    .event-info { flex: 1; }
-    .event-name { font-size: 0.82rem; font-weight: 500; }
-    .event-meta { font-family: var(--mono); font-size: 0.65rem; color: var(--text-muted); margin-top: 0.1rem; }
-
-    .event-status {
-      font-family: var(--mono); font-size: 0.6rem; padding: 0.2rem 0.5rem;
-      border: 1px solid; letter-spacing: 0.08em;
-    }
-    .event-status.pending { color: var(--text-muted); border-color: var(--border-soft); }
-    .event-status.creating { color: var(--yellow); border-color: rgba(245,158,11,0.3); }
-    .event-status.done { color: var(--green); border-color: rgba(16,185,129,0.3); }
-    .event-status.error { color: var(--red); border-color: rgba(239,68,68,0.3); }
-
-    .select-all-row {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 0.6rem;
-    }
-    .select-all-row span { font-size: 0.7rem; color: var(--text-muted); }
-    .link-btn {
-      font-size: 0.7rem; color: var(--purple-light); background: none;
-      border: none; cursor: pointer; padding: 0; text-decoration: underline;
-    }
-
-    /* ── Buttons ── */
-    .btn-run {
-      width: 100%; background: var(--purple); color: white;
-      border: none; font-size: 0.78rem; font-weight: 500;
-      letter-spacing: 0.08em; padding: 0.85rem; cursor: pointer;
-      transition: background 0.2s; text-transform: uppercase;
-    }
-    .btn-run:hover:not(:disabled) { background: var(--purple-light); color: var(--bg); }
-    .btn-run:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    /* ── Log panel ── */
-    .log-panel {
-      background: var(--surface); border: 1px solid var(--border);
-      display: flex; flex-direction: column;
-    }
-
-    .log-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
-    }
-
-    .log-title {
-      font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.15em;
-      text-transform: uppercase; color: var(--purple);
-    }
-
-    .log-stats { display: flex; gap: 1.2rem; }
-    .log-stat { font-family: var(--mono); font-size: 0.68rem; }
-    .log-stat .n { font-weight: 500; }
-    .log-stat.success .n { color: var(--green); }
-    .log-stat.fail .n { color: var(--red); }
-    .log-stat.total .n { color: var(--purple-light); }
-
-    .log-body {
-      flex: 1; overflow-y: auto; padding: 1rem 1.5rem;
-      font-family: var(--mono); font-size: 0.72rem; line-height: 1.8;
-      min-height: 400px; max-height: 600px;
-    }
-
-    .log-line { display: flex; gap: 0.8rem; }
-    .log-time { color: var(--text-muted); flex-shrink: 0; }
-    .log-line.info .log-msg { color: var(--text-muted); }
-    .log-line.success .log-msg { color: var(--green); }
-    .log-line.error .log-msg { color: var(--red); }
-    .log-line.warn .log-msg { color: var(--yellow); }
-    .log-line.highlight .log-msg { color: var(--purple-light); }
-
-    .empty-log {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; height: 100%; gap: 0.8rem;
-      color: var(--text-muted); font-family: var(--mono); font-size: 0.72rem;
-    }
-    .empty-log .icon { font-size: 2rem; opacity: 0.3; }
-
-    /* Progress bar */
-    .progress-wrap {
-      padding: 0 1.5rem 1rem; display: none;
-    }
-    .progress-track {
-      height: 3px; background: var(--border-soft); position: relative; overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%; background: var(--purple);
-      transition: width 0.4s ease; width: 0%;
-    }
-    .progress-label {
-      font-family: var(--mono); font-size: 0.65rem; color: var(--text-muted);
-      margin-top: 0.4rem; text-align: right;
-    }
-
-    /* Result card */
-    .result-card {
-      margin: 1rem 1.5rem;
-      background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2);
-      padding: 1rem 1.2rem; display: none;
-    }
-    .result-card h3 { font-size: 0.8rem; color: var(--green); margin-bottom: 0.5rem; }
-    .result-card p { font-size: 0.72rem; color: var(--text-muted); line-height: 1.6; }
-
-    /* Custom events editor */
-    .custom-wrap { margin-top: 1rem; display: none; }
-    .custom-wrap textarea {
-      width: 100%; background: var(--surface-2); border: 1px solid var(--border-soft);
-      color: var(--text); font-family: var(--mono); font-size: 0.7rem;
-      padding: 0.8rem; outline: none; resize: vertical; min-height: 120px;
-      transition: border-color 0.2s; line-height: 1.6;
-    }
-    .custom-wrap textarea:focus { border-color: var(--purple); }
-
-    @media (max-width: 800px) {
-      .layout { grid-template-columns: 1fr; }
-      body { padding: 1rem; }
-    }
-  </style>
-</head>
-<body>
-
-<div class="header">
-  <div class="header-left">
-    <h1>Cal.com Event Bulk Creator</h1>
-    <p>Auto-create all salon event types via the Cal.com API</p>
-  </div>
-  <div class="badge">BOOKISTUDIO TOOL</div>
-</div>
-
-<div class="layout">
-
-  <!-- LEFT: Config panel -->
-  <div>
-    <div class="panel">
-      <div class="panel-title">01 · API Key</div>
-
-      <label>Cal.com API Key</label>
-      <div class="api-key-wrap" style="margin-bottom:0;">
-        <input type="password" id="apiKey" placeholder="cal_live_xxxxxxxxxxxx" />
-        <button class="toggle-eye" onclick="toggleKey()">👁</button>
-      </div>
-      <div class="hint">
-        Get it from Cal.com →
-        <a href="https://app.cal.com/settings/developer/api-keys" target="_blank">
-          Settings → Developer → API Keys
-        </a>
-      </div>
-
-      <label>Cal.com Username</label>
-      <input type="text" id="username" placeholder="christine-ssalon" value="christine-ssalon" />
-
-      <hr class="divider" />
-      <div class="panel-title">02 · Select Events</div>
-
-      <div class="select-all-row">
-        <span id="selected-count">0 selected</span>
-        <button class="link-btn" onclick="toggleAll()">Select All</button>
-      </div>
-
-      <div class="events-list" id="eventsList"></div>
-
-      <hr class="divider" />
-      <div class="panel-title">03 · Location</div>
-      <label>In-Person Address</label>
-      <input type="text" id="location" value="12713 Bissonnet St, Houston, TX 77099" />
-
-      <button class="btn-run" id="runBtn" onclick="runCreator()" disabled>
-        ▶ Create Selected Events
-      </button>
-    </div>
-  </div>
-
-  <!-- RIGHT: Log panel -->
-  <div class="log-panel">
-    <div class="log-header">
-      <div class="log-title">Output Log</div>
-      <div class="log-stats">
-        <div class="log-stat success"><span class="n" id="stat-success">0</span> created</div>
-        <div class="log-stat fail"><span class="n" id="stat-fail">0</span> failed</div>
-        <div class="log-stat total"><span class="n" id="stat-total">0</span> total</div>
-      </div>
-    </div>
-
-    <div class="progress-wrap" id="progressWrap">
-      <div class="progress-track">
-        <div class="progress-fill" id="progressFill"></div>
-      </div>
-      <div class="progress-label" id="progressLabel">0 / 0</div>
-    </div>
-
-    <div class="log-body" id="logBody">
-      <div class="empty-log">
-        <div class="icon">⚡</div>
-        <span>Waiting to run...</span>
-        <span style="color: var(--text-muted); font-size: 0.65rem;">Enter API key, select events, hit run</span>
-      </div>
-    </div>
-
-    <div class="result-card" id="resultCard">
-      <h3>✓ All done!</h3>
-      <p id="resultText"></p>
-    </div>
-  </div>
-
-</div>
-
-<script>
-  const SALON_EVENTS = [
-    // Nails
-    { title: "Manicure",                   slug: "manicure",                duration: 30, description: "Classic manicure service at Christine's Salon." },
-    { title: "Manicure & Pedicure",        slug: "manicure-pedicure",       duration: 60, description: "Full manicure and pedicure combo." },
-    { title: "Nail Fill-In",               slug: "nail-fill-in",            duration: 45, description: "Acrylic or gel nail fill-in service." },
-    { title: "Nail Polish Change",         slug: "nail-polish-change",      duration: 20, description: "Quick nail polish color change." },
-    { title: "Nail Polish Removal",        slug: "nail-polish-removal",     duration: 15, description: "Safe nail polish or gel removal." },
-    { title: "Nail Repair",                slug: "nail-repair",             duration: 20, description: "Single or multiple nail repair service." },
-    { title: "Pedicure",                   slug: "pedicure",                duration: 45, description: "Classic or spa pedicure with soak, scrub, and polish." },
-    // Hair
-    { title: "Haircut",                    slug: "haircut",                 duration: 30, description: "Professional haircut and styling." },
-    { title: "Hair Styling",               slug: "hair-styling",            duration: 45, description: "Blowout, curling, or special occasion styling." },
-    { title: "Color Only",                 slug: "color-only",              duration: 60, description: "Full hair color service." },
-    { title: "Cut & Color",                slug: "cut-and-color",           duration: 90, description: "Haircut combined with full color service." },
-    { title: "Chemical Treatment",         slug: "chemical-treatment",      duration: 90, description: "Perm, relaxer, keratin, or chemical treatments." },
-    { title: "Applying Hair Extensions",   slug: "hair-extensions",         duration: 90, description: "Professional hair extension application." },
-    { title: "Reapplying Hair Extensions", slug: "hair-extensions-reapply", duration: 60, description: "Reapplication of existing hair extensions." },
-    { title: "Hair Extension Coloring",    slug: "extension-coloring",      duration: 60, description: "Color service applied to hair extensions." },
-    { title: "Hair Extension Removal",     slug: "extension-removal",       duration: 45, description: "Safe removal of hair extensions." },
-    { title: "Bridal Hair Services",       slug: "bridal-hair",             duration: 90, description: "Bridal and special occasion updo and styling." },
-    // Wax
-    { title: "Waxing",                     slug: "waxing",                  duration: 30, description: "Eyebrow, facial, or body waxing service." },
-  ];
-
-  let selected = new Set(SALON_EVENTS.map((_, i) => i));
-  let stats = { success: 0, fail: 0 };
-  let statuses = {};
-
-  // ── Render events list
-  function renderEvents() {
-    const list = document.getElementById('eventsList');
-    list.innerHTML = '';
-    SALON_EVENTS.forEach((ev, i) => {
-      const row = document.createElement('div');
-      row.className = 'event-row' + (selected.has(i) ? ' selected' : '');
-      row.id = `row-${i}`;
-      row.onclick = () => toggleEvent(i);
-      row.innerHTML = `
-        <div class="event-check">${selected.has(i) ? '✓' : ''}</div>
-        <div class="event-info">
-          <div class="event-name">${ev.title}</div>
-          <div class="event-meta">${ev.duration}min · /${ev.slug}</div>
-        </div>
-        <div class="event-status pending" id="status-${i}">—</div>
-      `;
-      list.appendChild(row);
-    });
-    updateCount();
-  }
-
-  function toggleEvent(i) {
-    if (selected.has(i)) selected.delete(i);
-    else selected.add(i);
-    renderEvents();
-  }
-
-  function toggleAll() {
-    if (selected.size === SALON_EVENTS.length) selected.clear();
-    else SALON_EVENTS.forEach((_, i) => selected.add(i));
-    renderEvents();
-  }
-
-  function updateCount() {
-    document.getElementById('selected-count').textContent = `${selected.size} selected`;
-    document.getElementById('runBtn').disabled = selected.size === 0 || !document.getElementById('apiKey').value.trim();
-  }
-
-  // ── Key toggle
-  function toggleKey() {
-    const inp = document.getElementById('apiKey');
-    inp.type = inp.type === 'password' ? 'text' : 'password';
-  }
-
-  document.getElementById('apiKey').addEventListener('input', () => {
-    document.getElementById('runBtn').disabled =
-      selected.size === 0 || !document.getElementById('apiKey').value.trim();
-  });
-
-  // ── Logging
-  let logEmpty = true;
-  function log(msg, type = 'info') {
-    const body = document.getElementById('logBody');
-    if (logEmpty) { body.innerHTML = ''; logEmpty = false; }
-    const now = new Date().toLocaleTimeString('en-US', { hour12: false });
-    const line = document.createElement('div');
-    line.className = `log-line ${type}`;
-    line.innerHTML = `<span class="log-time">${now}</span><span class="log-msg">${msg}</span>`;
-    body.appendChild(line);
-    body.scrollTop = body.scrollHeight;
-  }
-
-  function setStatus(i, status, label) {
-    const el = document.getElementById(`status-${i}`);
-    if (el) { el.className = `event-status ${status}`; el.textContent = label; }
-  }
-
-  function updateStats() {
-    document.getElementById('stat-success').textContent = stats.success;
-    document.getElementById('stat-fail').textContent = stats.fail;
-    document.getElementById('stat-total').textContent = stats.success + stats.fail;
-  }
-
-  // ── Main runner
-  async function runCreator() {
-    const apiKey   = document.getElementById('apiKey').value.trim();
-    const username = document.getElementById('username').value.trim();
-    const location = document.getElementById('location').value.trim();
-
-    if (!apiKey) { log('⚠ No API key provided.', 'warn'); return; }
-
-    const toCreate = [...selected];
-    stats = { success: 0, fail: 0 };
-    updateStats();
-
-    document.getElementById('runBtn').disabled = true;
-    document.getElementById('progressWrap').style.display = 'block';
-    document.getElementById('resultCard').style.display = 'none';
-
-    log(`Starting bulk creation for @${username}`, 'highlight');
-    log(`Creating ${toCreate.length} event type(s)...`, 'info');
-
-    for (let idx = 0; idx < toCreate.length; idx++) {
-      const i  = toCreate[idx];
-      const ev = SALON_EVENTS[i];
-
-      setStatus(i, 'creating', '...');
-      log(`→ Creating "${ev.title}" (${ev.duration}min)`, 'info');
-
-      // Progress
-      const pct = Math.round((idx / toCreate.length) * 100);
-      document.getElementById('progressFill').style.width = pct + '%';
-      document.getElementById('progressLabel').textContent = `${idx} / ${toCreate.length}`;
-
-      try {
-        // Cal.com API v1 - create event type
-        const body = {
-          title: ev.title,
-          slug: ev.slug,
-          length: ev.duration,
-          description: ev.description + `\n\nBook your appointment at Christine's Salon · ${location} · (281) 879-8854`,
-          locations: [{ type: "inPerson", address: location }],
-          hidden: false,
-          requiresConfirmation: false,
-          disableGuests: true,
-        };
-
-        const res = await fetch('https://api.cal.com/v1/event-types', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify(body),
-        });
-
-        const data = await res.json();
-
-        if (res.ok && (data.event_type || data.eventType || data.id)) {
-          stats.success++;
-          setStatus(i, 'done', '✓ done');
-          log(`  ✓ "${ev.title}" created successfully`, 'success');
-        } else {
-          throw new Error(data.message || data.error || `HTTP ${res.status}`);
-        }
-
-      } catch (err) {
-        stats.fail++;
-        setStatus(i, 'error', '✗ fail');
-        log(`  ✗ "${ev.title}" failed: ${err.message}`, 'error');
-      }
-
-      updateStats();
-      await sleep(350); // rate limit buffer
-    }
-
-    // Done
-    document.getElementById('progressFill').style.width = '100%';
-    document.getElementById('progressLabel').textContent = `${toCreate.length} / ${toCreate.length}`;
-
-    log('─────────────────────────────────', 'info');
-    log(`Done. ${stats.success} created · ${stats.fail} failed.`, stats.fail > 0 ? 'warn' : 'success');
-
-    if (stats.success > 0) {
-      const card = document.getElementById('resultCard');
-      card.style.display = 'block';
-      document.getElementById('resultText').textContent =
-        `${stats.success} event type(s) created on cal.com/${username}. Go to Cal.com → Event Types and toggle them ON to make them live. Then the embed on the website will show them automatically.`;
-    }
-
-    document.getElementById('runBtn').disabled = false;
-  }
-
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-  // Init
-  renderEvents();
-</script>
-</body>
-</html>
+ting "Manicure" (30min)
+17:47:57
+✗ "Manicure" failed: Failed to fetch
+17:47:58
+→ Creating "Manicure & Pedicure" (60min)
+17:47:58
+✗ "Manicure & Pedicure" failed: Failed to fetch
+17:47:58
+→ Creating "Nail Fill-In" (45min)
+17:47:58
+✗ "Nail Fill-In" failed: Failed to fetch
+17:47:59
+→ Creating "Nail Polish Change" (20min)
+17:47:59
+✗ "Nail Polish Change" failed: Failed to fetch
+17:47:59
+→ Creating "Nail Polish Removal" (15min)
+17:47:59
+✗ "Nail Polish Removal" failed: Failed to fetch
+17:47:59
+→ Creating "Nail Repair" (20min)
+17:48:00
+✗ "Nail Repair" failed: Failed to fetch
+17:48:00
+→ Creating "Pedicure" (45min)
+17:48:00
+✗ "Pedicure" failed: Failed to fetch
+17:48:00
+→ Creating "Haircut" (30min)
+17:48:00
+✗ "Haircut" failed: Failed to fetch
+17:48:01
+→ Creating "Hair Styling" (45min)
+17:48:01
+✗ "Hair Styling" failed: Failed to fetch
+17:48:01
+→ Creating "Color Only" (60min)
+17:48:01
+✗ "Color Only" failed: Failed to fetch
+17:48:02
+→ Creating "Cut & Color" (90min)
+17:48:02
+✗ "Cut & Color" failed: Failed to fetch
+17:48:02
+→ Creating "Chemical Treatment" (90min)
+17:48:02
+✗ "Chemical Treatment" failed: Failed to fetch
+17:48:02
+→ Creating "Applying Hair Extensions" (90min)
+17:48:02
+✗ "Applying Hair Extensions" failed: Failed to fetch
+17:48:03
+→ Creating "Reapplying Hair Extensions" (60min)
+17:48:03
+✗ "Reapplying Hair Extensions" failed: Failed to fetch
+17:48:03
+→ Creating "Hair Extension Coloring" (60min)
+17:48:03
+✗ "Hair Extension Coloring" failed: Failed to fetch
+17:48:04
+→ Creating "Hair Extension Removal" (45min)
+17:48:04
+✗ "Hair Extension Removal" failed: Failed to fetch
+17:48:04
+→ Creating "Bridal Hair Services" (90min)
+17:48:04
+✗ "Bridal Hair Services" failed: Failed to fetch
+17:48:05
+→ Creating "Waxing" (30min)
+17:48:05
+✗ "Waxing" failed: Failed to fetch
+17:48:05
+─────────────────────────────────
+17:48:05
+Done. 0 created · 18 failed.
